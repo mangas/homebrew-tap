@@ -1,0 +1,173 @@
+name: Update Formulas
+
+on:
+  schedule:
+    - cron: "0 */6 * * *" # every 6 hours
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  pull-requests: write
+
+env:
+  S3_BUCKET: graphctl-rs-releases
+  S3_REGION: eu-west-3
+
+jobs:
+  check-updates:
+    name: Check for formula updates
+    runs-on: ubuntu-latest
+    outputs:
+      mcpfile_update: ${{ steps.check.outputs.mcpfile_update }}
+      mcpfile_version: ${{ steps.check.outputs.mcpfile_version }}
+      graphctl_update: ${{ steps.check.outputs.graphctl_update }}
+      graphctl_version: ${{ steps.check.outputs.graphctl_version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Check for new releases
+        id: check
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # mcpfile: check GitHub releases (public repo)
+          mcpfile_latest=$(gh api repos/mangas/mcpfile/releases/latest --jq '.tag_name' 2>/dev/null || echo "")
+          mcpfile_latest_version="${mcpfile_latest#mcpfile-v}"
+          mcpfile_current=$(grep -oP 'version "\K[^"]+' Formula/mcpfile.rb)
+          echo "mcpfile: current=$mcpfile_current latest=$mcpfile_latest_version"
+
+          if [ -n "$mcpfile_latest_version" ] && [ "$mcpfile_latest_version" != "$mcpfile_current" ]; then
+            echo "mcpfile_update=true" >> $GITHUB_OUTPUT
+            echo "mcpfile_version=$mcpfile_latest_version" >> $GITHUB_OUTPUT
+          else
+            echo "mcpfile_update=false" >> $GITHUB_OUTPUT
+          fi
+
+          # graphctl-rs: check latest/VERSION from S3
+          graphctl_current=$(grep -oP 'version "\K[^"]+' Formula/gctl.rb)
+          graphctl_latest_tag=$(curl -sf "https://${S3_BUCKET}.s3.${S3_REGION}.amazonaws.com/latest/VERSION" || echo "")
+          graphctl_latest_version="${graphctl_latest_tag#graphctl_rs-v}"
+          echo "graphctl: current=$graphctl_current latest=$graphctl_latest_version"
+
+          if [ -n "$graphctl_latest_version" ] && [ "$graphctl_latest_version" != "$graphctl_current" ]; then
+            echo "graphctl_update=true" >> $GITHUB_OUTPUT
+            echo "graphctl_version=$graphctl_latest_version" >> $GITHUB_OUTPUT
+          else
+            echo "graphctl_update=false" >> $GITHUB_OUTPUT
+          fi
+
+  update-mcpfile:
+    name: Update mcpfile formula
+    needs: check-updates
+    if: needs.check-updates.outputs.mcpfile_update == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Download and hash binaries
+        id: hashes
+        env:
+          VERSION: ${{ needs.check-updates.outputs.mcpfile_version }}
+        run: |
+          base_url="https://github.com/mangas/mcpfile/releases/download/mcpfile-v${VERSION}"
+          for asset in mcpfile-aarch64-darwin mcpfile-x86_64-linux; do
+            curl -sL "${base_url}/${asset}" -o "/tmp/${asset}"
+            hash=$(sha256sum "/tmp/${asset}" | cut -d' ' -f1)
+            key=$(echo "$asset" | sed 's/mcpfile-//;s/-/_/g')
+            echo "${key}=${hash}" >> $GITHUB_OUTPUT
+          done
+
+      - name: Update formula
+        env:
+          VERSION: ${{ needs.check-updates.outputs.mcpfile_version }}
+          SHA_AARCH64_DARWIN: ${{ steps.hashes.outputs.aarch64_darwin }}
+          SHA_X86_64_LINUX: ${{ steps.hashes.outputs.x86_64_linux }}
+        run: |
+          sed -i "s/version \".*\"/version \"${VERSION}\"/" Formula/mcpfile.rb
+          sed -i "/mcpfile-aarch64-darwin/{n;s/sha256 \".*\"/sha256 \"${SHA_AARCH64_DARWIN}\"/}" Formula/mcpfile.rb
+          sed -i "/mcpfile-x86_64-linux/{n;s/sha256 \".*\"/sha256 \"${SHA_X86_64_LINUX}\"/}" Formula/mcpfile.rb
+
+      - name: Create PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ needs.check-updates.outputs.mcpfile_version }}
+        run: |
+          branch="update-mcpfile-v${VERSION}"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$branch"
+          git add Formula/mcpfile.rb
+          git commit -m "Update mcpfile to v${VERSION}"
+          git push -u origin "$branch"
+          gh pr create \
+            --title "Update mcpfile to v${VERSION}" \
+            --body "Automated formula update for mcpfile v${VERSION}." \
+            --head "$branch"
+
+  update-graphctl:
+    name: Update graphctl-rs formulas
+    needs: check-updates
+    if: needs.check-updates.outputs.graphctl_update == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Download and hash binaries
+        id: hashes
+        env:
+          VERSION: ${{ needs.check-updates.outputs.graphctl_version }}
+        run: |
+          base_url="https://${S3_BUCKET}.s3.${S3_REGION}.amazonaws.com/graphctl_rs-v${VERSION}"
+          for bin in gctl gctl-server gctl-mcp; do
+            for arch in aarch64-darwin x86_64-linux; do
+              asset="${bin}-${arch}"
+              curl -sL "${base_url}/${asset}" -o "/tmp/${asset}"
+              hash=$(sha256sum "/tmp/${asset}" | cut -d' ' -f1)
+              key=$(echo "${bin}_${arch}" | tr '-' '_')
+              echo "${key}=${hash}" >> $GITHUB_OUTPUT
+            done
+          done
+
+      - name: Update formulas
+        env:
+          VERSION: ${{ needs.check-updates.outputs.graphctl_version }}
+        run: |
+          declare -A SHA
+          SHA[gctl_aarch64_darwin]="${{ steps.hashes.outputs.gctl_aarch64_darwin }}"
+          SHA[gctl_x86_64_linux]="${{ steps.hashes.outputs.gctl_x86_64_linux }}"
+          SHA[gctl_server_aarch64_darwin]="${{ steps.hashes.outputs.gctl_server_aarch64_darwin }}"
+          SHA[gctl_server_x86_64_linux]="${{ steps.hashes.outputs.gctl_server_x86_64_linux }}"
+          SHA[gctl_mcp_aarch64_darwin]="${{ steps.hashes.outputs.gctl_mcp_aarch64_darwin }}"
+          SHA[gctl_mcp_x86_64_linux]="${{ steps.hashes.outputs.gctl_mcp_x86_64_linux }}"
+
+          for formula in gctl gctl-server gctl-mcp; do
+            file="Formula/${formula}.rb"
+            sed -i "s/version \".*\"/version \"${VERSION}\"/" "$file"
+
+            bin_key=$(echo "$formula" | tr '-' '_')
+            darwin_key="${bin_key}_aarch64_darwin"
+            linux_key="${bin_key}_x86_64_linux"
+
+            sed -i "/${formula}-aarch64-darwin/{n;s/sha256 \".*\"/sha256 \"${SHA[$darwin_key]}\"/}" "$file"
+            sed -i "/${formula}-x86_64-linux/{n;s/sha256 \".*\"/sha256 \"${SHA[$linux_key]}\"/}" "$file"
+          done
+
+      - name: Create PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ needs.check-updates.outputs.graphctl_version }}
+        run: |
+          branch="update-graphctl-v${VERSION}"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$branch"
+          git add Formula/gctl.rb Formula/gctl-server.rb Formula/gctl-mcp.rb
+          git commit -m "Update graphctl-rs formulas to v${VERSION}"
+          git push -u origin "$branch"
+          gh pr create \
+            --title "Update graphctl-rs formulas to v${VERSION}" \
+            --body "Automated formula update for graphctl-rs v${VERSION}." \
+            --head "$branch"
