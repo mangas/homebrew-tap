@@ -1,7 +1,7 @@
 class Gctl < Formula
   desc "CLI client for managing Graph network subgraph deployments"
   homepage "https://github.com/mangas/graphctl-rs"
-  version "0.2.3"
+  version "0.2.4"
   license "MIT"
 
   S3_BUCKET = "https://graphctl-rs-releases.s3.eu-west-3.amazonaws.com"
@@ -9,14 +9,14 @@ class Gctl < Formula
   on_macos do
     on_arm do
       url "#{S3_BUCKET}/graphctl_rs-v#{version}/gctl-aarch64-darwin"
-      sha256 "36ecdbff4449a46a63f70ef1f8b8be0beb1ec2d7167946867daf6bcd5a1c1ea6"
+      sha256 "4fdbae68489c606cd54effcda11dc6c4a770580f61bed600c8241691780741a9"
     end
   end
 
   on_linux do
     on_intel do
       url "#{S3_BUCKET}/graphctl_rs-v#{version}/gctl-x86_64-linux"
-      sha256 "af1adc87566b469ca6402d75f7a93e91015fce45fd1bdfba543c5f2f489bf600"
+      sha256 "bea6468435c7264f6ff8ee56eabba02fb76f431f7588e090c0cec2439e98f2c3"
     end
   end
 
