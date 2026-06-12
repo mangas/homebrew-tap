@@ -1,20 +1,20 @@
 class Mcpfile < Formula
   desc "Declarative MCP server manager for Docker-based MCP servers"
   homepage "https://github.com/mangas/mcpfile"
-  version "0.3.0"
+  version "0.3.1"
   license "MIT"
 
   on_macos do
     on_arm do
       url "https://github.com/mangas/mcpfile/releases/download/mcpfile-v#{version}/mcpfile-aarch64-darwin"
-      sha256 "1db4be099b346a2e49decbe9ac3fbb0745572497919b24c37de3fe372258f2ab"
+      sha256 "fdb96b7425c48e91ff87853af582361a12896809e34b81459f84027127e218e1"
     end
   end
 
   on_linux do
     on_intel do
       url "https://github.com/mangas/mcpfile/releases/download/mcpfile-v#{version}/mcpfile-x86_64-linux"
-      sha256 "dac416d8005098686930dac4de2e720f77a50e2da486d85d708fe563a3046ffc"
+      sha256 "1dc1e948c2761b64446d376de597adc924510d77a398ce69b3264d01cdfa709c"
     end
   end
 
