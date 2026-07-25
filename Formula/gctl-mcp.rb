@@ -1,7 +1,7 @@
 class GctlMcp < Formula
   desc "MCP server for graphctl - exposes Graph network data to AI assistants"
   homepage "https://github.com/mangas/graphctl-rs"
-  version "0.3.0"
+  version "0.3.1"
   license "MIT"
 
   S3_BUCKET = "https://graphctl-rs-releases.s3.eu-west-3.amazonaws.com"
@@ -9,14 +9,14 @@ class GctlMcp < Formula
   on_macos do
     on_arm do
       url "#{S3_BUCKET}/graphctl_rs-v#{version}/gctl-mcp-aarch64-darwin"
-      sha256 "7a3afcd7effca7e7a3d7ed395d1cd68c5c7c3a3ceb207da00a8b6b971bdeecb7"
+      sha256 "06ae3462a68d074f100ffee8d9db23a68475cb60bcaa5266608fbc42b5955bd9"
     end
   end
 
   on_linux do
     on_intel do
       url "#{S3_BUCKET}/graphctl_rs-v#{version}/gctl-mcp-x86_64-linux"
-      sha256 "fbacffd94734fa1cb7db68334eb7a4b627d46eac5a26884303291e855e60276d"
+      sha256 "9303a6d79b4bd976f41da3e7e7cd6f50169eb52c7bbc7c55a6a83c7c12860e89"
     end
   end
 
