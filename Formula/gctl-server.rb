@@ -1,7 +1,7 @@
 class GctlServer < Formula
   desc "Server daemon for graphctl, listening for NATS requests"
   homepage "https://github.com/mangas/graphctl-rs"
-  version "0.4.0"
+  version "0.7.0"
   license "MIT"
 
   S3_BUCKET = "https://graphctl-rs-releases.s3.eu-west-3.amazonaws.com"
@@ -9,14 +9,14 @@ class GctlServer < Formula
   on_macos do
     on_arm do
       url "#{S3_BUCKET}/graphctl_rs-v#{version}/gctl-server-aarch64-darwin"
-      sha256 "cd49c33af1b8ab3606fd3562e6c478d1edb07fb6a22f7c19a86b5af9c62bffe6"
+      sha256 "e083fd25c8e24b3caf5e2d945f10f95b286387990948ec050d056c907c8deb75"
     end
   end
 
   on_linux do
     on_intel do
       url "#{S3_BUCKET}/graphctl_rs-v#{version}/gctl-server-x86_64-linux"
-      sha256 "2a741ceb78709b326c755825c4cbf0ffa58d5eafb3367002e4485e52ba9db1c4"
+      sha256 "404532c80a946b4e7a08e0ac9f521128b5f0956462289b57fcac679cd34bac24"
     end
   end
 
