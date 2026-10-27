@@ -1,0 +1,54 @@
+# Opens a PR per tool when RustFS bucket releases has a newer release than the formulas:
+# ci/update-fetch.sh lists releases/<prefix>/ for the highest vX.Y.Z whose SHA256SUMS is uploaded,
+# ci/update-push.sh rewrites the formulas' version and sha256 lines from it and pushes the
+# commit with AGit (refs/for/main/<topic>), which opens or updates the PR. Runs on the
+# cron update-formulas (every 6 hours) and on a manual run on main (`just
+# update-formulas`); both secrets' admission allows them only on those events.
+
+when:
+  - event: cron
+    cron: update-formulas
+  - event: manual
+    branch: main
+
+variables:
+  # From mintedlabs/ci-images: rclone, git, bash and just; the only image with an S3 lister.
+  - &rust-release-image registry.tofus.wtf/rust-release:1.99.1@sha256:dde5221063f7dea6fc5805114c18066f05c64d534ee9d61ab829dfe21d65f22e
+  # ci-infra carries git and ssh for the push.
+  - &ci-infra-image registry.tofus.wtf/ci-infra:3.24@sha256:3e63eab08db1a60a931398e5189841f1e27acc8d9bc06363827f1407e990a1c9
+
+clone:
+  - name: clone
+    image: docker.io/woodpeckerci/plugin-git:2.10.1@sha256:550075c844fcec0af41d9d28f9860aa5d8c43e1e9419be4b9266dc02c2f29804
+
+steps:
+  - name: fetch
+    image: *rust-release-image
+    backend_options:
+      kubernetes:
+        # The read-only RustFS key, in this step only: Secret homebrew-tap-releases
+        # (namespace woodpecker-pipelines), listing releases/mcpfile/ and
+        # releases/graphctl-rs/ only.
+        secrets:
+          - name: homebrew-tap-releases
+            key: access_key
+            target: { env: RCLONE_S3_ACCESS_KEY_ID }
+          - name: homebrew-tap-releases
+            key: secret_key
+            target: { env: RCLONE_S3_SECRET_ACCESS_KEY }
+    commands:
+      - ci/update-fetch.sh
+
+  - name: push
+    image: *ci-infra-image
+    depends_on: [fetch]
+    backend_options:
+      kubernetes:
+        # The write deploy key for fa/homebrew-tap, in this step only: Secret
+        # homebrew-tap-deploy-key (namespace woodpecker-pipelines).
+        secrets:
+          - name: homebrew-tap-deploy-key
+            key: ssh_key
+            target: { env: DEPLOY_KEY }
+    commands:
+      - ci/update-push.sh

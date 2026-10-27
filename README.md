@@ -49,7 +49,7 @@ brew update
 brew upgrade mangas/tap/<formula>
 ```
 
-Formula updates are checked automatically every 6 hours via GitHub Actions. To trigger a check manually:
+Formula updates are checked every 6 hours by the Woodpecker cron `update-formulas` (`.woodpecker/update-formulas.yaml`), which opens a PR on Forgejo per tool with a newer release. To trigger a check manually:
 
 ```sh
 just update-formulas
@@ -58,5 +58,5 @@ just update-formulas
 Or directly:
 
 ```sh
-gh workflow run update-formulas.yml --repo mangas/homebrew-tap
+woodpecker-cli pipeline create --branch main fa/homebrew-tap
 ```

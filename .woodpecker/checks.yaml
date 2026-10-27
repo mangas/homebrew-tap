@@ -1,0 +1,38 @@
+# The checks on every pull request and every push to main: the scripts in ci/ pass
+# shellcheck and shfmt (`just check-shell`), and the pipelines pass yamllint and the
+# Justfile just's formatter (`just lint`), and ci/update-push.sh passes its scenario tests
+# (`just test`); the same recipes run on a workstation. Branch
+# protection on main requires this pipeline's status before a merge.
+
+when:
+  - event: pull_request
+  - event: push
+    branch: main
+
+variables:
+  # ci-infra carries just, shellcheck, shfmt and yamllint.
+  - &ci-infra-image registry.tofus.wtf/ci-infra:3.24@sha256:3e63eab08db1a60a931398e5189841f1e27acc8d9bc06363827f1407e990a1c9
+
+clone:
+  - name: clone
+    image: docker.io/woodpeckerci/plugin-git:2.10.1@sha256:550075c844fcec0af41d9d28f9860aa5d8c43e1e9419be4b9266dc02c2f29804
+
+# Independent, so one failure hides no other check's result.
+steps:
+  - name: shell
+    image: *ci-infra-image
+    depends_on: []
+    commands:
+      - just check-shell
+
+  - name: lint
+    image: *ci-infra-image
+    depends_on: []
+    commands:
+      - just lint
+
+  - name: test
+    image: *ci-infra-image
+    depends_on: []
+    commands:
+      - just test
