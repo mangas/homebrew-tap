@@ -10,6 +10,14 @@ brew tap mangas/tap
 
 ## Formulas
 
+### nit (cask, Apple Silicon)
+
+Pull request review app for GitHub and Forgejo, as `nit.app`. Signed ad hoc, not notarized: the cask clears the quarantine flag so Gatekeeper opens it.
+
+```sh
+brew install --cask mangas/tap/nit
+```
+
 ### mcpfile
 
 Declarative MCP server manager for Docker-based MCP servers.
