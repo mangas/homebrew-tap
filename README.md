@@ -34,19 +34,16 @@ Tools for managing Graph network subgraph deployments. Each binary is a separate
 # CLI client
 brew install mangas/tap/gctl
 
-# Server daemon (NATS listener)
-brew install mangas/tap/gctl-server
-
 # MCP server for AI assistants
 brew install mangas/tap/gctl-mcp
 ```
 
 ## Supported platforms
 
-| Platform       | mcpfile | gctl | gctl-server | gctl-mcp |
-|----------------|---------|------|-------------|----------|
-| macOS ARM      | yes     | yes  | yes         | yes      |
-| Linux x86_64   | yes     | yes  | yes         | yes      |
+| Platform       | mcpfile | gctl | gctl-mcp |
+|----------------|---------|------|----------|
+| macOS ARM      | yes     | yes  | yes      |
+| Linux x86_64   | yes     | yes  | yes      |
 
 macOS Intel and Linux ARM are not currently built.
 

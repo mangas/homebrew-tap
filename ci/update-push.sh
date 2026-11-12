@@ -9,7 +9,7 @@ set -euo pipefail
 
 : "${DEPLOY_KEY:?DEPLOY_KEY is not set: no PR can be pushed}"
 
-declare -A formulas=(["mcpfile"]="mcpfile" ["graphctl-rs"]="gctl gctl-server gctl-mcp")
+declare -A formulas=(["mcpfile"]="mcpfile" ["graphctl-rs"]="gctl gctl-mcp")
 
 umask 077
 keyfile=$(mktemp)

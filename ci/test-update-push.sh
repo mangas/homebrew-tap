@@ -81,7 +81,7 @@ test_newer_release_opens_one_pr_per_tool() {
     check "newer release: mcpfile version" version_is "$m" mcpfile 1.0.1
     check "newer release: mcpfile darwin hash" hash_after "$m" mcpfile mcpfile-aarch64-darwin "$(h 1)"
     check "newer release: mcpfile linux hash" hash_after "$m" mcpfile mcpfile-x86_64-linux "$(h 2)"
-    check "newer release: gctl-server darwin hash" hash_after "$g" gctl-server gctl-server-aarch64-darwin "$(h 5)"
+    check "newer release: gctl darwin hash" hash_after "$g" gctl gctl-aarch64-darwin "$(h 3)"
     check "newer release: gctl-mcp linux hash" hash_after "$g" gctl-mcp gctl-mcp-x86_64-linux "$(h 8)"
     check "newer release: mcpfile PR leaves gctl alone" version_is "$m" gctl 2.0.0
     check "newer release: graphctl PR leaves mcpfile alone" version_is "$g" mcpfile 1.0.0
