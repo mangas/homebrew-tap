@@ -1,20 +1,20 @@
 class Gctl < Formula
   desc "CLI client for managing Graph network subgraph deployments"
   homepage "https://github.com/mangas/graphctl-rs"
-  version "0.16.1"
+  version "0.20.0"
   license "MIT"
 
   on_macos do
     on_arm do
       url "https://releases.tofus.wtf/graphctl-rs/v#{version}/gctl-aarch64-darwin"
-      sha256 "adce4dc596913b46ffbc4e5ae493ae1652eea404d03810a2a56872f026fc2d85"
+      sha256 "4842c68354ccc72ce740c66930506a3e118dba88a27577dcb290fc09887585f8"
     end
   end
 
   on_linux do
     on_intel do
       url "https://releases.tofus.wtf/graphctl-rs/v#{version}/gctl-x86_64-linux"
-      sha256 "cee3f9f1cfa9a556bac717f198978cebd3aa53ccd7ae1f3078160db13607f646"
+      sha256 "7e1fd0928a86472183e24bfb879da7c8c8153d777b3e0b263f8f9d3f90adc6c8"
     end
   end
 
