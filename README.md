@@ -26,6 +26,14 @@ Declarative MCP server manager for Docker-based MCP servers.
 brew install mangas/tap/mcpfile
 ```
 
+### pipit
+
+Starlark script engine.
+
+```sh
+brew install mangas/tap/pipit
+```
+
 ### graphctl-rs
 
 Tools for managing Graph network subgraph deployments. Each binary is a separate formula — install only what you need.
@@ -43,12 +51,13 @@ brew install mangas/tap/gctl-mcp
 
 ## Supported platforms
 
-| Platform       | mcpfile | gctl | gctl-server | gctl-mcp |
-|----------------|---------|------|-------------|----------|
-| macOS ARM      | yes     | yes  | yes         | yes      |
-| Linux x86_64   | yes     | yes  | yes         | yes      |
+| Platform       | mcpfile | pipit | gctl | gctl-server | gctl-mcp |
+|----------------|---------|-------|------|-------------|----------|
+| macOS ARM      | yes     | yes   | yes  | yes         | yes      |
+| Linux x86_64   | yes     | yes   | yes  | yes         | yes      |
+| Linux ARM      | no      | yes   | no   | no          | no       |
 
-macOS Intel and Linux ARM are not currently built.
+macOS Intel is not currently built.
 
 ## Upgrading
 

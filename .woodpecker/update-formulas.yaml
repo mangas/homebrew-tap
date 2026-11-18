@@ -27,8 +27,8 @@ steps:
     backend_options:
       kubernetes:
         # The read-only RustFS key, in this step only: Secret homebrew-tap-releases
-        # (namespace woodpecker-pipelines), listing releases/mcpfile/ and
-        # releases/graphctl-rs/ only.
+        # (namespace woodpecker-pipelines), listing releases/mcpfile/,
+        # releases/graphctl-rs/ and releases/pipit/ only.
         secrets:
           - name: homebrew-tap-releases
             key: access_key

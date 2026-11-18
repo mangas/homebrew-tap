@@ -13,7 +13,8 @@ failed=0
 
 h() { printf '%064d' "$1"; } # a fake sha256 per number
 
-# A fresh tap at mcpfile 1.0.0 and graphctl-rs 2.0.0, with a bare remote; cd's into it.
+# A fresh tap at mcpfile 1.0.0, graphctl-rs 2.0.0 and pipit 3.0.0, with a bare remote and
+# pipit released at its version (nothing to update); cd's into it.
 setup() {
     local dir="$work/$1"
     mkdir -p "$dir"
@@ -24,8 +25,10 @@ setup() {
     cd "$dir/tap"
     sed -i -E 's/^  version "[^"]+"$/  version "1.0.0"/' Formula/mcpfile.rb
     sed -i -E 's/^  version "[^"]+"$/  version "2.0.0"/' Formula/gctl*.rb
+    sed -i -E 's/^  version "[^"]+"$/  version "3.0.0"/' Formula/pipit.rb
     commit base
     export TAP_REMOTE="$dir/remote.git" DEPLOY_KEY=unused
+    release pipit v3.0.0
 }
 
 commit() {
@@ -133,6 +136,30 @@ test_one_missing_asset_fails() {
     check "one asset missing: nothing pushed" nothing_pushed
 }
 
+test_three_target_formula_rewrites_each_hash() {
+    setup three
+    mcpfile_at 1.0.0
+    release graphctl-rs v2.0.0
+    release pipit v3.1.0 \
+        "$(h 9)  pipit-aarch64-darwin" "$(h 10)  pipit-x86_64-linux" "$(h 11)  pipit-aarch64-linux"
+    run_update
+    local p=refs/for/main/update-pipit-v3.1.0
+    check "three targets: one ref" pushed_are "$p"
+    check "three targets: pipit version" version_is "$p" pipit 3.1.0
+    check "three targets: darwin hash" hash_after "$p" pipit pipit-aarch64-darwin "$(h 9)"
+    check "three targets: linux intel hash" hash_after "$p" pipit pipit-x86_64-linux "$(h 10)"
+    check "three targets: linux arm hash" hash_after "$p" pipit pipit-aarch64-linux "$(h 11)"
+}
+
+test_missing_linux_arm_hash_fails() {
+    setup three-missing
+    mcpfile_at 1.0.0
+    release graphctl-rs v2.0.0
+    release pipit v3.1.0 "$(h 9)  pipit-aarch64-darwin" "$(h 10)  pipit-x86_64-linux"
+    check "linux arm missing: the run fails" fails run_update
+    check "linux arm missing: nothing pushed" nothing_pushed
+}
+
 test_rerun_pushes_the_same_commit() {
     setup rerun
     mcpfile_at 1.0.1
@@ -152,5 +179,7 @@ test_older_release_is_not_a_downgrade
 test_version_compare_is_semver
 test_binary_dropped_upstream_keeps_its_formula
 test_one_missing_asset_fails
+test_three_target_formula_rewrites_each_hash
+test_missing_linux_arm_hash_fails
 test_rerun_pushes_the_same_commit
 exit "$failed"
