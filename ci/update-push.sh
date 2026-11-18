@@ -9,7 +9,7 @@ set -euo pipefail
 
 : "${DEPLOY_KEY:?DEPLOY_KEY is not set: no PR can be pushed}"
 
-declare -A formulas=(["mcpfile"]="mcpfile" ["graphctl-rs"]="gctl gctl-server gctl-mcp")
+declare -A formulas=(["mcpfile"]="mcpfile" ["graphctl-rs"]="gctl gctl-server gctl-mcp" ["pipit"]="pipit")
 
 umask 077
 keyfile=$(mktemp)
@@ -20,7 +20,7 @@ export GIT_SSH_COMMAND="ssh -i $keyfile -o IdentitiesOnly=yes -o StrictHostKeyCh
 # TAP_REMOTE: where the PRs are pushed; ci/test-update-push.sh points it at a local repo.
 remote=${TAP_REMOTE:-git@git.tofus.wtf:fa/homebrew-tap.git}
 base=$(git rev-parse HEAD)
-for prefix in mcpfile graphctl-rs; do
+for prefix in mcpfile graphctl-rs pipit; do
     sums=".releases/$prefix/SHA256SUMS"
     tag=$(cat ".releases/$prefix/tag")
     latest=${tag#v}
@@ -40,29 +40,39 @@ for prefix in mcpfile graphctl-rs; do
     git checkout -q --detach "$base"
     for f in "${fs[@]}"; do
         file="Formula/$f.rb"
-        darwin=$(awk -v a="$f-aarch64-darwin" '{ n = $2; sub(/^\*/, "", n) } n == a { print $1 }' "$sums")
-        linux=$(awk -v a="$f-x86_64-linux" '{ n = $2; sub(/^\*/, "", n) } n == a { print $1 }' "$sums")
+        # The assets are the formula's url lines, so a target added to a formula is
+        # rewritten, and required in SHA256SUMS, without a change here.
+        mapfile -t assets < <(sed -nE 's|^ +url "[^"]*/([^/"]+)"$|\1|p' "$file")
+        [ "${#assets[@]}" -gt 0 ] || {
+            echo "$prefix: $file has no asset url lines" >&2
+            exit 1
+        }
+        pairs="" found=0 bad=""
+        for a in "${assets[@]}"; do
+            h=$(awk -v a="$a" '{ n = $2; sub(/^\*/, "", n) } n == a { print $1 }' "$sums")
+            [ -n "$h" ] && found=1
+            [[ $h =~ ^[0-9a-f]{64}$ ]] || bad="$bad $a"
+            pairs="$pairs $a $h"
+        done
         # A binary dropped upstream (gctl-mcp) keeps its formula at the old version.
-        if [ -z "$darwin" ] && [ -z "$linux" ]; then
+        if [ "$found" = 0 ]; then
             echo "$prefix: $f is not in $tag's SHA256SUMS, $file left at its version"
             continue
         fi
-        for h in "$darwin" "$linux"; do
-            [[ $h =~ ^[0-9a-f]{64}$ ]] || {
-                echo "$prefix: $f: bad or missing sha256 in $tag's SHA256SUMS" >&2
-                exit 1
-            }
-        done
+        [ -z "$bad" ] || {
+            echo "$prefix: $f: bad or missing sha256 in $tag's SHA256SUMS for:$bad" >&2
+            exit 1
+        }
         # The version line, and the sha256 line right after each asset's url line; every
         # one must be found exactly once, or the formula's shape changed.
-        awk -v ver="$latest" -v da="$f-aarch64-darwin" -v dh="$darwin" -v la="$f-x86_64-linux" -v lh="$linux" '
+        awk -v ver="$latest" -v pairs="$pairs" '
+            BEGIN { n = split(pairs, p, " "); for (i = 1; i < n; i += 2) hs[p[i]] = p[i + 1] }
             /^  version "[^"]+"$/ { sub(/"[^"]+"/, "\"" ver "\""); nv++ }
             hash != "" && /^ +sha256 "[0-9a-f]+"$/ { sub(/"[0-9a-f]+"/, "\"" hash "\""); ns++ }
             { hash = "" }
-            $1 == "url" && $0 ~ ("/" da "\"$") { hash = dh }
-            $1 == "url" && $0 ~ ("/" la "\"$") { hash = lh }
+            $1 == "url" { a = $0; sub(/"$/, "", a); sub(/.*\//, "", a); hash = hs[a] }
             { print }
-            END { if (nv != 1 || ns != 2) { print FILENAME ": version or sha256 lines not where expected" > "/dev/stderr"; exit 1 } }
+            END { if (nv != 1 || ns != n / 2) { print FILENAME ": version or sha256 lines not where expected" > "/dev/stderr"; exit 1 } }
         ' "$file" > "$file.new"
         mv "$file.new" "$file"
         git add "$file"

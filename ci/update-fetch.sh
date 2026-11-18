@@ -5,7 +5,8 @@
 # RustFS endpoint.
 # Env:
 #   RCLONE_S3_ACCESS_KEY_ID, RCLONE_S3_SECRET_ACCESS_KEY  read-only RustFS key that may list
-#                      releases/mcpfile/ and releases/graphctl-rs/ (Secret homebrew-tap-releases)
+#                      releases/mcpfile/, releases/graphctl-rs/ and releases/pipit/
+#                      (Secret homebrew-tap-releases)
 set -euo pipefail
 
 : "${RCLONE_S3_ACCESS_KEY_ID:?RCLONE_S3_ACCESS_KEY_ID is not set}"
@@ -17,7 +18,7 @@ export RCLONE_S3_PROVIDER=Minio RCLONE_S3_ENDPOINT=http://rustfs.rustfs.svc.clus
 
 # The release prefixes in bucket releases (https://releases.tofus.wtf/<prefix>/), one PR
 # each; ci/update-push.sh maps each to its formulas.
-for prefix in mcpfile graphctl-rs; do
+for prefix in mcpfile graphctl-rs pipit; do
     # Captured first: a failed listing stops the script here, where inside the for list
     # below its exit status would be ignored.
     listing=$(rclone lsf --dirs-only ":s3:releases/$prefix/")
