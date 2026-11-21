@@ -88,8 +88,18 @@ for prefix in mcpfile graphctl-rs pipit; do
     # rerun with the same topic updates that PR (force-push: main may have moved since).
     # Fallback if Forgejo refuses AGit from a deploy key: push a plain branch,
     # HEAD:refs/heads/update-<prefix>-v<ver>, and open the PR by hand.
-    git push "$remote" "HEAD:refs/for/main/update-$prefix-v$latest" \
+    # The pinned dates make a rerun's commit identical when nothing changed, which Forgejo
+    # refuses; that PR is already current, so the other prefixes still run.
+    if ! out=$(git push "$remote" "HEAD:refs/for/main/update-$prefix-v$latest" \
         -o title="$title" \
         -o description="$prefix $tag from https://releases.tofus.wtf/$prefix/$tag/ (versions and sha256 from its SHA256SUMS), by the update-formulas pipeline." \
-        -o force-push=true
+        -o force-push=true 2>&1); then
+        grep -q 'The new commit is the same as the old commit' <<< "$out" || {
+            echo "$out" >&2
+            exit 1
+        }
+        echo "$prefix: the PR for $tag is already current"
+        continue
+    fi
+    echo "$out"
 done
