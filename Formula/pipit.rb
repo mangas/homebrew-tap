@@ -1,24 +1,24 @@
 class Pipit < Formula
   desc "Starlark script engine"
   homepage "https://git.tofus.wtf/fa/pipit"
-  version "0.1.0"
+  version "0.2.0"
   license "MIT"
 
   on_macos do
     on_arm do
       url "https://releases.tofus.wtf/pipit/v#{version}/pipit-aarch64-darwin"
-      sha256 "9a3b135985d8443adf9d940e349d00b0242979ce2dc78ca8ac250a4e4916ff42"
+      sha256 "8fa2f3151e70d18a2df8fc0832a9d6136c52b290e434c0f8c04665e5c3722b07"
     end
   end
 
   on_linux do
     on_intel do
       url "https://releases.tofus.wtf/pipit/v#{version}/pipit-x86_64-linux"
-      sha256 "953db4a4a47a28393623bdac860979863c8471143024350fd7b1bfa06b9cb4f3"
+      sha256 "831e6318b85e56ee7f37b6b1f4a495ddf7174d098f40512c23684a0c86a213b9"
     end
     on_arm do
       url "https://releases.tofus.wtf/pipit/v#{version}/pipit-aarch64-linux"
-      sha256 "132af68ecbb6024b3b874cce43cff481ad36f46f96dc556484e4e61324cd4a23"
+      sha256 "6747952897a457875228ad7ef366c48defe3db26030f4258044b2e35b9796d7e"
     end
   end
 
