@@ -1,20 +1,20 @@
 class GctlServer < Formula
   desc "Server daemon for graphctl, listening for NATS requests"
   homepage "https://github.com/mangas/graphctl-rs"
-  version "0.20.2"
+  version "0.22.0"
   license "MIT"
 
   on_macos do
     on_arm do
       url "https://releases.tofus.wtf/graphctl-rs/v#{version}/gctl-server-aarch64-darwin"
-      sha256 "4e7b49bc813965e880b9c5d79446aa080bba0d98789a7a1e4aef69bad8bae458"
+      sha256 "5c513373085801f2cc9fbf9081ab86eefbe34131f0b405945d75d91c0003a898"
     end
   end
 
   on_linux do
     on_intel do
       url "https://releases.tofus.wtf/graphctl-rs/v#{version}/gctl-server-x86_64-linux"
-      sha256 "a23b3dbfae1c6d45fee29b4fd618e10a32042782985262ccefc734c9cc48be51"
+      sha256 "ce74ab8c2f9c1bd737a6918c0238d8e46350bc9bd6e521c06aa8fd66fc13227f"
     end
   end
 
